@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Angry Puffins</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,6 +63,12 @@ button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--beak-deep)}
 .swatches button{width:34px;height:34px;border-radius:50%;border:0;cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.2)}
 .swatches button[aria-pressed="true"]{box-shadow:0 0 0 3px #fff,0 0 0 6px #ffc94a}
 .login .msg{min-height:20px;color:#ffb4b4;font-weight:700;font-size:14px}
+.loadcover{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(ellipse at 50% 40%,#2c4f7c,#13243a);color:#fff;font-family:var(--display);font-size:clamp(18px,3vw,30px);border-radius:inherit;text-align:center;padding:16px}
+.loadcover[hidden]{display:none!important}
+.loadcover .spin{width:46px;height:46px;border-radius:50%;border:5px solid rgba(255,255,255,.2);border-top-color:#ff8a3d;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.loadcover .spin{animation-duration:2.5s}}
 button.ghost{background:transparent;color:var(--foam);box-shadow:inset 0 0 0 2px var(--line)}
 button.ghost.dark{color:var(--night);box-shadow:inset 0 0 0 2px var(--gull)}
 button:focus-visible{outline:3px solid var(--star);outline-offset:2px}
@@ -76,8 +83,16 @@ canvas.aiming{cursor:grabbing}
 .nlmap[hidden]{display:none!important}
 .nlcard{background:#13243a;border-radius:20px;padding:12px 14px 14px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.5),inset 0 0 0 2px #2f4766;width:min(640px,100%);max-height:calc(100vh - 24px);display:flex;flex-direction:column;align-items:center;animation:nlpop .35s ease-out}
 .nlcard h3{font-family:var(--display);font-size:clamp(18px,2.6vw,26px);margin:0 0 6px;color:#fff}
-.nlcard canvas{flex:1 1 auto;min-height:160px;height:auto;width:100%;max-height:calc(100vh - 170px);object-fit:contain;aspect-ratio:560/460;border-radius:14px;display:block}
+#nlCanvas{flex:1 1 auto;min-height:160px;height:auto;width:100%;max-height:calc(100vh - 170px);object-fit:contain;aspect-ratio:560/460;border-radius:14px;display:block}
 .nlcard p{margin:8px 0 10px;font-weight:800;color:var(--ink);min-height:1.3em}
+.buddyrow{flex:none;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.nlcard #nlGo,.nlcard p,.nlcard h3{flex:none}
+.buddylab{font-weight:800;color:var(--muted);font-size:14px}
+.buddies{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.buddies button{width:50px;height:50px;min-height:0;padding:0;border:0;border-radius:14px;background:#1d3352;cursor:pointer;box-shadow:inset 0 0 0 2px #2f4766;display:grid;place-items:center;flex:none}
+.buddies button:hover{box-shadow:inset 0 0 0 2px #ffc94a}
+.buddies button[aria-checked="true"]{background:#2c4f7c;box-shadow:inset 0 0 0 3px #ffc94a}
+.buddies canvas{width:44px!important;height:44px!important;max-height:none!important;flex:none!important;aspect-ratio:auto!important;display:block}
 @keyframes nlpop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion: reduce){.nlcard{animation:none}}
 .panel{position:absolute;inset:0;display:grid;place-items:center;background:rgba(12,24,40,.55);overflow:auto;padding:8px}
@@ -218,6 +233,7 @@ button.pick:disabled .count{color:var(--muted);font-size:12px}
       <button class="ghost" id="musicBtn" type="button" aria-pressed="true">🎵 Music: On</button>
       <button class="ghost" id="nextSongBtn" type="button" title="Play the next song" aria-label="Next song">⏭</button>
       <button class="ghost" id="xmasBtn" type="button" aria-pressed="false">🎄 Christmas: Off</button>
+      <button class="ghost" id="speedBtn" type="button" title="Change the game speed">⏩ Speed 2×</button>
       <button class="ghost" id="spinBtn" type="button">Prize wheel</button>
       <select id="lvlSel" aria-label="Choose a roost"></select>
       <select id="scenery" aria-label="Choose the scenery"></select>
@@ -227,12 +243,15 @@ button.pick:disabled .count{color:var(--muted);font-size:12px}
 
   <div class="stage">
     <canvas id="game" width="1600" height="600" aria-label="Angry Puffins game area"></canvas>
+    <div class="loadcover" id="loadCover" role="status"><div class="spin" aria-hidden="true"></div><div id="loadText">Loading Angry Puffins…</div></div>
     <button id="finishBtn" class="finish" type="button" hidden>Finish roost ★</button>
     <div class="nlmap" id="nlMap" hidden role="dialog" aria-labelledby="nlTitle">
       <div class="nlcard">
         <h3 id="nlTitle">Off to the next spot!</h3>
         <canvas id="nlCanvas" width="560" height="460" aria-describedby="nlText"></canvas>
         <p id="nlText"></p>
+        <div class="buddyrow"><span class="buddylab" id="buddyLab">Pick who hops:</span>
+          <div class="buddies" id="nlBuddies" role="radiogroup" aria-labelledby="buddyLab"></div></div>
         <button id="nlGo" type="button">Continue</button>
       </div>
     </div>
@@ -318,10 +337,12 @@ function freeSpin(b){if(b&&b.plugin&&b.plugin.inertia0){Body.setInertia(b,b.plug
 const W=1600,H=600,GROUND=560; // a wider beach: more room for towers
 const ANCHOR={x:210,y:430};
 const MAXPULL=110,POWER=0.185,GSTEP=0.278;
+// puffins fly FAST times quicker: launched FAST times harder with FAST² gravity on them, so they follow the exact same arc, just sooner
+const FAST=1.7; // much higher and fast puffins could slip straight through thin blocks
 const cv=document.getElementById('game');let ctx=cv.getContext('2d');
 const TYPES={
  classic:{id:'classic',name:'Puff',power:'Tap: dive-bomb',shout:'DIVE!',r:16,density:.004,body:'#1b1d22',wing:'#2b2f37',belly:'#f4f1e8',face:'#e8e5dc',beak:'#f26b1d',beakBase:'#4c5d78',stripe:'#ffc94a',feet:'#f26b1d'},
- tufted:{id:'tufted',name:'Goldie',power:'Tap: speed burst',shout:'ZOOM!',r:15,density:.004,body:'#16171b',wing:'#24262c',belly:'#2a2c33',face:'#f4f1e8',beak:'#f26b1d',beakBase:'#e0a23a',stripe:'#ffd34d',feet:'#f26b1d',tufts:'#ffcf4a'},
+ tufted:{id:'tufted',name:'Goldie',power:'Tap: golden dash (plows through blocks)',shout:'GOLDEN DASH!',r:15,density:.004,body:'#16171b',wing:'#24262c',belly:'#2a2c33',face:'#f4f1e8',beak:'#f26b1d',beakBase:'#e0a23a',stripe:'#ffd34d',feet:'#f26b1d',tufts:'#ffcf4a'},
  boomer:{id:'boomer',name:'Boomer',power:'Tap: KABOOM!',shout:'KABOOM!',r:18,density:.005,body:'#1a1a1f',wing:'#2a2a30',belly:'#3a3a44',face:'#e8e5dc',beak:'#f26b1d',beakBase:'#4c5d78',stripe:'#ffc94a',feet:'#f26b1d',fuse:true},
  puffling:{id:'puffling',name:'Pufflings',power:'Tap: split into three',shout:'SPLIT!',r:11,density:.004,body:'#5d6068',wing:'#4a4d55',belly:'#a6a9b0',face:'#8b8f98',beak:'#3a3d44',feet:'#9a9ca3',smallBeak:true,bigEyes:true,fluff:true},
  chonk:{id:'chonk',name:'Big Barry',power:'Tap: puff up huge',shout:'CHONK!',r:22,density:.0055,body:'#23201f',wing:'#332f2c',belly:'#efe8da',face:'#e2dccd',beak:'#e5531a',beakBase:'#4c5d78',stripe:'#ffc94a',feet:'#e5531a',scar:true},
@@ -522,7 +543,52 @@ const MATS={
 const MAX_TALK=2; // how many gulls may talk at the same time
 const HATS=['none','captain','bandana','beanie'];
 let introT=0,introMax=150;
-const TAUNTS=['Eggs for lunch!','Bow to your king!','Mine!','My cliff now','Squawk!','Ha ha ha','Nice try, clown beak','Got any chips?','Missed me!','Mine! Mine!'];
+const TAUNTS=['Eggs for lunch!','Mine!','My cliff now','Squawk!','Ha ha ha','Nice try, clown beak','Got any chips?','Missed me!','Mine! Mine!',
+  'Got any fish and chips?','Nice beak. Did a clown pick it?','You fly like a potato!','This is OUR rock!','Puffins? More like PUFF-NOTS!',
+  'I ate a whole capelin!','Waddle away, little puffin','I can see my house from here!','Is that the best you got?','Zzzz… oh, you\'re still here?',
+  'Me cliff, me rules!','Who you looking at?','I\'m not scared! …okay, a little','Nice try, orange feet!','Ooh, shiny!','Bet you can\'t hit me!',
+  'Whatcha at, b\'y?','I stole a french fry once','Seagulls rule, puffins drool!','My tower is SO strong','Pfft. Amateurs.'];
+const XMAS_TAUNTS=['Bah humbug!','I\'m on the naughty list!','I stole Santa\'s cookies!','Jingle squawks!','All I want for Christmas is FISH','Ho ho NO!','These presents are mine!','My antlers are real, I swear'];
+const COLD_TAUNTS=['Brrr! Me feathers are frozen!','Who turned on the snow?','My beak is an icicle!','Snowball fight!'];
+const WET_TAUNTS=['Who ordered rain?','I\'m soggy!','Wet feathers, bad mood','Splish splash!'];
+const KING_TAUNTS=['Bow to your king!','I am the Gull Emperor!','Kneel before me, puffins!','My crown is VERY shiny','Guards! Get them!'];
+const LAUNCH_LINES=['Uh oh','Incoming!','Duck!','Here it comes!','Brace yourselves!','Not the face!','Mommy!','Abandon nest!','Every gull for himself!','Hide!'];
+const HURT_LINES=['Ow!','My feathers!','That tickled!','Hey, watch it!','Is that all?','Ouch, me wing!','I felt that!','Not cool!','Rude!'];
+const FRIEND_LINES=['Kevin, nooo!','Who\'s next?!','Man down!','Retreat!','They got Gary!','That was my cousin!','Run away!','We\'re doomed!'];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function pickTaunt(g){ // something fitting for this gull, the season and the weather
+  if(g.plugin.king&&Math.random()<.5)return pick(KING_TAUNTS);
+  const r=Math.random();
+  if(xmasOn()&&r<.3)return pick(XMAS_TAUNTS);
+  if((weather==='snow'||weather==='hail')&&r>.75)return pick(COLD_TAUNTS);
+  if(weather==='rain'&&r>.75)return pick(WET_TAUNTS);
+  return pick(TAUNTS);
+}
+/* the puffins in the background cheer you on */
+const BG_LINES=['Go get \'em!','You can do it!','Those gulls stole my fish!','Yes b\'y!','Some good, that!','Where ya to, b\'y?','Aim for the TNT!',
+  'I believe in you!','Watch out for the king!','Smash that tower!','Fish, anyone?','Nice day for flying!','Ooh, a shiny gem!','Puffin power!',
+  'Mind the wind!','My cousin\'s in that slingshot!','Those gulls are SO rude','I saw a whale this morning!','Capelin for supper!','Pull back further!'];
+const BG_CHEER=['Yay!','Woohoo!','Got one!','Bullseye!','Nice shot!','Puffins rule!','Take that, gulls!'];
+const BG_LAUNCH=['Gooo!','Fly, fly!','Wheee!','Up, up and away!'];
+const BG_XMAS=['Merry Christmas!','I want a fish for Christmas!','Look at the Christmas tree!','Jingle bells!','I love my Santa hat!'];
+const BG_COLD=['Brrr!','Snow day!','Catch a snowflake!'];
+const BG_FLY=['Wheee!','Race you!','I can see my nest!','Beep beep, coming through!','Flap flap flap!','Look at me go!','Wind in my feathers!','Last one there is a rotten egg!','Is that a gull down there?','Wanna fly with us?'];
+const BG_SLEEPY=['Zzz… five more minutes…','*snore*','Mmm… fishies…'];
+let bgSay=null,BGPOS=[];
+function bgShout(lines,dur,where){ // pick a background puffin and give it something to say
+  const spots=where?BGPOS.filter(p=>p.kind===where):BGPOS;if(!spots.length)return;
+  const sp=pick(spots);bgSay={kind:sp.kind,i:sp.i,text:pick(lines),T:dur};
+}
+function bgChatter(){
+  const night=!!(theme.moon||theme.isNight);
+  if(night&&Math.random()<.5)return bgShout(BG_SLEEPY,110,'perch');
+  const r=Math.random();
+  if(xmasOn()&&r<.3)return bgShout(BG_XMAS,120);
+  if((weather==='snow'||weather==='hail')&&r>.8)return bgShout(BG_COLD,100);
+  if(r>.55&&BGPOS.some(p=>p.kind==='fly'))return bgShout(BG_FLY,110,'fly'); // the flock up in the sky
+  bgShout(BG_LINES,120);
+}
+const talkingNow=()=>gulls.filter(g=>g.plugin.alive&&g.plugin.sayT>0).length;
 let shake=0;
 /* ---------- state ---------- */
 let engine,level=0,score=0,levelStartScore=0,puffinsLeft=0,state='ready';
@@ -613,11 +679,14 @@ function onCollide(e){
 }
 function hit(body,speed,other){
   const d=body.plugin;if(!d||!d.kind)return;
+  if(d.zoom)d.zoom=false; // back to normal gravity once it lands on something
   if(speed>2.5)freeSpin(body);
   if(d.kind==='puffin'&&d.type==='boomer'&&!d.fuseT&&!d.gone){d.fuseT=55;popup(body.position.x,body.position.y-34,'Tsssss…','#ffc94a');}
   if(d.kind==='egg'){if(!d.boom){d.boom=true;toRemove.add(body);explode(body.position.x,body.position.y,d.p||1);}return;}
   const op=other.plugin&&other.plugin.kind==='puffin';
   const mult=op?(other.plugin.power||2)*SL().dmg:1;
+  if(op&&other.plugin.dashT>0&&other.plugin.pierce>0&&d.kind==='block'&&!toRemove.has(body)&&d.mat!=='metal'){ // Goldie's dash smashes straight through
+    other.plugin.pierce--;other.plugin.repierce=true;d.hp=0;toRemove.add(body);breakBlock(body);shake=Math.max(shake,5);return;}
   if(op&&SL().iceBreaker&&d.kind==='block'&&d.mat==='ice'&&!toRemove.has(body)){d.hp=0;toRemove.add(body);breakBlock(body);return;}
   if(d.kind==='gull'&&d.alive){
     if(d.falling){killGull(body);return;}
@@ -625,7 +694,8 @@ function hit(body,speed,other){
     const od=other.plugin;
     if(od&&od.kind==='block'&&(other.speed>1.2||speed>1.5)&&other.position.y<body.position.y+6){
       squash(body);return;}
-    if(speed>2.2){d.hp-=speed*mult;if(d.hp<=0)killGull(body);}
+    if(speed>2.2){d.hp-=speed*mult;if(d.hp<=0)killGull(body);
+      else if(speed>3&&!(d.sayT>0)&&talkingNow()<MAX_TALK&&Math.random()<.6){d.say=pick(HURT_LINES);d.sayT=55;}}
   }else if(d.kind==='block'){
     if(speed>3&&particles.length<220){
       for(let k=0;k<3;k++)particles.push({x:body.position.x+(Math.random()-.5)*d.w,y:body.position.y+d.h/2*(Math.random()),
@@ -654,6 +724,9 @@ function crushCheck(e){
 function killGull(b){
   const d=b.plugin;if(!d.alive)return;d.alive=false;toRemove.add(b);
   shake=Math.max(shake,9);d.sayT=0;
+  {const pals=gulls.filter(g=>g!==b&&g.plugin.alive&&!(g.plugin.sayT>0));
+   if(!(bgSay&&bgSay.T>0)&&Math.random()<.45)bgShout(BG_CHEER,60);
+   if(pals.length&&talkingNow()<MAX_TALK&&Math.random()<.55){const g=pick(pals);g.plugin.say=d.king?'The king is down!':pick(FRIEND_LINES);g.plugin.sayT=60;}}
   addCoins(d.king?25:5,b.position.x,b.position.y-80);
   if(d.king&&!kingGems.includes(level)){kingGems.push(level);save('kingGems',kingGems);addGems(1,b.position.x,b.position.y-110);}
   const pts=d.king?10000:5000;score+=pts;popup(b.position.x,b.position.y-20,'+'+pts.toLocaleString(),'#ffffff');
@@ -727,14 +800,17 @@ cv.addEventListener('pointerup',release);
 cv.addEventListener('pointercancel',()=>{aiming=false;pull={x:0,y:0};cv.classList.remove('aiming');});
 
 function useAbility(){
+  if(puffin.plugin.zoom){puffin.plugin.zoom=false;Body.setVelocity(puffin,{x:puffin.velocity.x/FAST,y:puffin.velocity.y/FAST});} // powers work from normal speed, so none get stronger
   const T=TYPES[puffin.plugin.type],v=puffin.velocity,{x,y}=puffin.position;
   const spark=c=>{for(let k=0;k<8;k++)particles.push({x,y,vx:(Math.random()-.5)*4,vy:-Math.random()*3,life:30,type:'spark',c});};
   popup(x,y-34,T.shout,'#ffc94a');spark(T.tufts||'#ffc94a');
   if(T.id==='classic'){
     const sp=Math.max(Vector.magnitude(v),10)*1.45,dir=v.x>=0?1:-1;
     Body.setVelocity(puffin,{x:dir*sp*.55,y:sp*.84});puffin.plugin.power=3.2;
-  }else if(T.id==='tufted'){
-    Body.setVelocity(puffin,{x:v.x*2,y:v.y*2});puffin.plugin.power=2.8;
+  }else if(T.id==='tufted'){ // golden dash: shoots straight ahead where she's pointing, punching through the first 3 blocks
+    const m=Math.max(Vector.magnitude(v),1),sp=Math.min(30,Math.max(m*2.2,24)),dash={x:v.x/m*sp,y:v.y/m*sp};
+    Body.setVelocity(puffin,dash);
+    Object.assign(puffin.plugin,{power:3.6,dashT:26,dashV:dash,pierce:3});
   }else if(T.id==='puffling'){
     for(const a of [-.22,.22]){
       const c=Math.cos(a),s=Math.sin(a);
@@ -774,7 +850,9 @@ function launch(){
   const pos={x:ANCHOR.x+pull.x,y:ANCHOR.y+pull.y};const T=TYPES[selected];
   puffin=Bodies.circle(pos.x,pos.y,T.r,{density:T.density,restitution:.35,friction:.5,frictionAir:.002,plugin:{kind:'puffin',type:T.id,power:T.power,r:T.r}});
   Composite.add(engine.world,puffin);
-  Body.setVelocity(puffin,{x:-pull.x*POWER*SL().power,y:-pull.y*POWER*SL().power});
+  Body.setVelocity(puffin,{x:-pull.x*POWER*SL().power*FAST,y:-pull.y*POWER*SL().power*FAST});
+  puffin.plugin.zoom=true;
+  if(!(bgSay&&bgSay.T>0)&&Math.random()<.3)bgShout(BG_LAUNCH,50); // extra gravity while it's in the air, until it hits something
   Body.setAngularVelocity(puffin,.04);
   left[selected]--;puffinsLeft--; // every shot uses up a puffin, even in the bonus round
   if(rosterLeft[selected]>0)rosterLeft[selected]--;else if(bonus[selected]>0){bonus[selected]--;save('bonus',bonus);}
@@ -784,7 +862,7 @@ function launch(){
   // a gull or two react to the launch (never the whole flock)
   const talking=gulls.filter(g=>g.plugin.alive&&g.plugin.sayT>0).length,awake=gulls.filter(g=>g.plugin.alive&&!(g.plugin.sayT>0));
   let react=Math.min(MAX_TALK-talking,Math.random()<.5?1:2,awake.length);
-  while(react-->0){const g=awake.splice(Math.floor(Math.random()*awake.length),1)[0];g.plugin.say=g.plugin.hp<3.5?'Not again!':['Uh oh','Incoming!','Duck!'][Math.floor(Math.random()*3)];g.plugin.sayT=50;}
+  while(react-->0){const g=awake.splice(Math.floor(Math.random()*awake.length),1)[0];g.plugin.say=g.plugin.hp<3.5?'Not again!':pick(LAUNCH_LINES);g.plugin.sayT=50;}
 }
 
 /* ---------- loop ---------- */
@@ -794,7 +872,13 @@ function calm(){return Composite.allBodies(engine.world).every(b=>b.isStatic||b.
 function step(){
   t++;
   if(!$('panel').hidden&&state==='done'){tickParticles();return;}
+  // zooming puffins get extra gravity so their faster flight keeps the same arc
+  if(puffin&&puffin.plugin.zoom&&puffin.force){const g=engine.gravity;puffin.force.y+=puffin.mass*g.y*(g.scale??.001)*(FAST*FAST-1);}
+  const dp=puffin&&puffin.plugin;
+  if(dp&&dp.dashT>0&&puffin.force){const g=engine.gravity;puffin.force.y-=puffin.mass*g.y*(g.scale??.001);dp.dashT--; // Goldie's dash flies dead straight
+    if(particles.length<240)particles.push({x:puffin.position.x,y:puffin.position.y,vx:(Math.random()-.5)*1.5,vy:(Math.random()-.5)*1.5,life:22,type:'spark',c:Math.random()<.5?'#ffd34d':'#fff3b0'});}
   Engine.update(engine,1000/60);
+  if(dp&&dp.repierce){dp.repierce=false;Body.setVelocity(puffin,{x:dp.dashV.x*.85,y:dp.dashV.y*.85});dp.dashV={x:dp.dashV.x*.85,y:dp.dashV.y*.85};} // keeps plowing on
   // if anything is really moving, make sure nothing stays asleep in mid-air
   if(Composite.allBodies(engine.world).some(b=>!b.isStatic&&!b.isSleeping&&b.speed>1.2))wakeAll();
   for(const b of Composite.allBodies(engine.world)){
@@ -814,10 +898,12 @@ function step(){
 
   // gull taunts
   for(const g of gulls)if(g.plugin.sayT>0)g.plugin.sayT--;
-  if(t%110===0&&(state==='ready'||state==='settling')&&gulls.filter(g=>g.plugin.alive&&g.plugin.sayT>0).length<MAX_TALK){ // at most two talking at once
+  if(bgSay&&bgSay.T>0)bgSay.T--;
+  if(t%150===75&&!(bgSay&&bgSay.T>0)&&(state==='ready'||state==='settling')&&Math.random()<.7)bgChatter();
+  if(t%85===0&&(state==='ready'||state==='settling')&&talkingNow()<MAX_TALK){ // at most two talking at once
     const alive=gulls.filter(g=>g.plugin.alive&&!(g.plugin.sayT>0));
     if(alive.length){const g=alive[Math.floor(Math.random()*alive.length)];
-      g.plugin.say=TAUNTS[Math.floor(Math.random()*TAUNTS.length)];g.plugin.sayT=120;}
+      g.plugin.say=pickTaunt(g);g.plugin.sayT=120;}
   }
   if(state==='flying'){
     if(levelGem&&!levelGem.taken)for(const b of [puffin,...extras]){if(!b)continue;
@@ -932,10 +1018,28 @@ const NL_LABEL={witless:'Witless Bay',signal:'Signal Hill',tablelands:'The Table
 function nlProj(lon,lat){const k=72,cx=Math.cos(49*Math.PI/180);return [ (lon+59.6)*cx*k+(560-7.3*cx*k)/2, (51.9-lat)*k+26 ];}
 function nlSpot(id){const p=LIVE_SPOTS.find(q=>q[0]===id);return p?nlProj(p[2],p[1]):[280,230];}
 let nlAnim=0;
+function mapBuddy(){const id=load('mapBuddy','classic');return TYPES[id]&&isUnlocked(id)?id:'classic';} // each player's chosen traveller
+function drawBuddyOn(g,id,x,y,r,flip,sq){ // the real game character, drawn onto another canvas
+  const T=TYPES[id]||TYPES.classic,main=ctx;
+  g.save();g.translate(x,y);g.scale(flip*(1+sq*.25),1-sq*.25);
+  ctx=g;try{drawPuffin(0,0,0,r,true,null,T);}catch(e){}ctx=main;
+  g.restore();
+}
+function drawBuddies(from,to){
+  const box=$('nlBuddies');box.innerHTML='';const cur=mapBuddy();
+  Object.keys(TYPES).filter(isUnlocked).forEach(id=>{
+    const b=document.createElement('button');b.type='button';b.setAttribute('role','radio');b.setAttribute('aria-checked',id===cur?'true':'false');
+    b.setAttribute('aria-label',TYPES[id].name);b.title=TYPES[id].name;
+    const c=document.createElement('canvas');c.width=88;c.height=88;b.appendChild(c);
+    drawBuddyOn(c.getContext('2d'),id,44,50,id==='chonk'?24:22,1,0);
+    b.addEventListener('click',()=>{save('mapBuddy',id);showNLMap(from,to);const again=[...$('nlBuddies').children].find(x=>x.title===TYPES[id].name);if(again)again.focus();});
+    box.appendChild(b);});
+}
 function showNLMap(from,to){
-  const box=$('nlMap'),cv=$('nlCanvas'),g=cv.getContext('2d'),A=nlSpot(from),B=nlSpot(to);
-  $('nlTitle').textContent='Off to '+(NL_LABEL[to]||THEMES[to].name)+'!';
+  const box=$('nlMap'),cv=$('nlCanvas'),g=cv.getContext('2d'),A=nlSpot(from),B=nlSpot(to),who=mapBuddy(),whoName=TYPES[who].name;
+  $('nlTitle').textContent=whoName+(/s$/.test(whoName)?' are':' is')+' off to '+(NL_LABEL[to]||THEMES[to].name)+'!';
   $('nlText').textContent='';
+  drawBuddies(from,to);
   box.hidden=false;$('nlGo').focus({preventScroll:true});
   const t0=performance.now(),WAIT=700,JUMP=reduce?1:1500;
   function drawMap(){
@@ -986,8 +1090,9 @@ function showNLMap(from,to){
     if(e<WAIT){sq=Math.max(0,Math.sin(e/WAIT*Math.PI))*.8;} // crouch before jumping
     else if(f>=1){const land=(e-WAIT-JUMP)/350;sq=land<1?Math.sin(land*Math.PI)*.9:0;
       if(land<1.2){g.strokeStyle='rgba(255,255,255,'+(.8*(1-Math.min(1,land)))+')';g.lineWidth=2;g.beginPath();g.arc(B[0],B[1],8+land*18,0,7);g.stroke();}}
-    puffin(px,py-12,1.25,dir,sq);
-    if(f>=1&&!$('nlText').textContent)$('nlText').textContent='The puffin hopped from '+(NL_LABEL[from]||THEMES[from].name)+' to '+(NL_LABEL[to]||THEMES[to].name)+'!';
+    g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(px,py+4,12,3,0,0,7);g.fill();
+    drawBuddyOn(g,who,px,py-12,who==='chonk'?16:14,dir,sq);
+    if(f>=1&&!$('nlText').textContent)$('nlText').textContent=whoName+' hopped from '+(NL_LABEL[from]||THEMES[from].name)+' to '+(NL_LABEL[to]||THEMES[to].name)+'!';
     if(e<WAIT+JUMP+600)nlAnim=requestAnimationFrame(frame);
   }
   cancelAnimationFrame(nlAnim);nlAnim=requestAnimationFrame(frame);
@@ -2022,11 +2127,13 @@ async function fetchLiveWeather(){
   }catch(e){} // blocked or offline: the shared report (or random weather) is used instead
 }
 fetchLiveWeather();setInterval(fetchLiveWeather,20*60*1000);
+let liveLoading=true; // true until the shared weather report arrives (or we know it won't)
+setTimeout(()=>{liveLoading=false;},12000); // give up waiting after 12 seconds
 (async()=>{try{
-  if(!window.claude||!window.claude.use)return;
-  const db=await window.claude.use('db');if(!db)return; // not signed in, or not available: keep the random weather
-  db.doc('weather/now').onSnapshot(snap=>{if(snap.exists)useLive(snap.data());},()=>{});
-}catch(e){}})();
+  if(!window.claude||!window.claude.use){liveLoading=false;return;}
+  const db=await window.claude.use('db');if(!db){liveLoading=false;return;} // not signed in, or not available: keep the random weather
+  db.doc('weather/now').onSnapshot(snap=>{if(snap.exists)useLive(snap.data());liveLoading=false;},()=>{liveLoading=false;});
+}catch(e){liveLoading=false;}})();
 function liveWeather(){ // the real weather at this roost's place, if it's recent enough to trust
   if(!LIVE||!LIVE.places||!NL_THEMES.includes(paintedTheme))return null;
   const p=LIVE.places[paintedTheme];if(!p)return null;
@@ -2079,6 +2186,12 @@ function drawPlaceBadge(){ // where in the world this roost is
   ctx.fillStyle=nl?'#bfe8ff':'#fff';ctx.fillText(txt,W-26,69);
 }
 function drawWeatherBadge(){
+  if(liveLoading&&NL_THEMES.includes(paintedTheme)&&!liveWeather()){ // the real weather is still on its way
+    const dots='.'.repeat(1+Math.floor(t/20)%3),txt='📡 Loading live weather'+dots;
+    ctx.font='16px "Lilita One", "Arial Rounded MT Bold", sans-serif';ctx.textAlign='left';
+    const bw=ctx.measureText('📡 Loading live weather...').width+24;
+    ctx.fillStyle='rgba(19,36,58,.55)';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(W-14-bw,12,bw,30,10);else ctx.rect(W-14-bw,12,bw,30);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillText(txt,W-14-bw+12,33);return;}
   const w=WEATHER[weather],lw=liveWeather();ctx.font='16px "Lilita One", "Arial Rounded MT Bold", sans-serif';ctx.textAlign='right';
   const icon=(weather==='clear'&&theme.isNight)?'🌙':w.icon;
   let txt=icon+' '+w.name,bw=120;
@@ -2125,22 +2238,38 @@ function drawAmbient(){
   }
 }
 function drawBackgroundPuffins(){
+  BGPOS=[];drawBgPuffinsInner();
+}
+function drawBgSpeech(){ // drawn late, on top of the towers, so the words never hide behind blocks
+  if(bgSay&&bgSay.T>0){const sp=BGPOS.find(p=>p.kind===bgSay.kind&&p.i===bgSay.i);if(sp)bgBubble(sp.x,sp.y,bgSay.text,Math.min(1,bgSay.T/12));}
+}
+function bgBubble(x,y,txt,a){ // a small blue speech bubble, so you can tell it's a friend talking
+  ctx.save();ctx.globalAlpha=a;ctx.font='14px "Lilita One", "Arial Rounded MT Bold", sans-serif';
+  const tw=ctx.measureText(txt).width+14,bx=Math.max(4,Math.min(W-tw-4,x-tw/2)),by=Math.max(4,y-34);
+  ctx.fillStyle='#e6f3ff';ctx.strokeStyle='#2f6f9f';ctx.lineWidth=1.8;
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,22,8);else ctx.rect(bx,by,tw,22);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-5,by+21);ctx.lineTo(x,by+30);ctx.lineTo(x+5,by+21);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x-5,by+22);ctx.lineTo(x,by+30);ctx.lineTo(x+5,by+22);ctx.stroke();
+  ctx.fillStyle='#13243a';ctx.textAlign='left';ctx.fillText(txt,bx+7,by+16);ctx.restore();
+}
+function drawBgPuffinsInner(){
   const P=TYPES.classic,sleepy=theme===THEMES.night||!!theme.isNight;
   // perched on the far sea stacks (some shuffle their feet)
-  for(const [x,y,r] of (theme.perch||BG_PERCH)){const hop=reduce?0:Math.max(0,Math.sin(t/37+x))*1.5;
-    drawPuffin(x,y-r*1.15-hop,0,r,true,null,P);
-    if(sleepy){ctx.fillStyle='rgba(220,230,255,.7)';ctx.font='10px "Lilita One", sans-serif';ctx.textAlign='left';ctx.fillText('z',x+r+2,y-r*2.4-Math.abs(Math.sin(t/40+x))*4);}}
+  (theme.perch||BG_PERCH).forEach(([x,y,r],i)=>{const hop=reduce?0:Math.max(0,Math.sin(t/37+x))*1.5;
+    drawPuffin(x,y-r*1.15-hop,0,r,true,null,P);BGPOS.push({kind:'perch',i,x,y:y-r*2.6-hop});
+    if(sleepy){ctx.fillStyle='rgba(220,230,255,.7)';ctx.font='10px "Lilita One", sans-serif';ctx.textAlign='left';ctx.fillText('z',x+r+2,y-r*2.4-Math.abs(Math.sin(t/40+x))*4);}});
   if(theme.extra==='rain')return; // everyone else is sheltering from the storm
   // bobbing on the waves
-  for(const [x,y,r,ph] of BG_SEA){const bob=reduce?0:Math.sin(t/28+ph)*2,drift=reduce?0:Math.sin(t/300+ph)*18;
-    drawPuffin(x+drift,y+bob,reduce?0:Math.sin(t/40+ph)*.12,r,false,null,P);
+  BG_SEA.forEach(([x,y,r,ph],i)=>{const bob=reduce?0:Math.sin(t/28+ph)*2,drift=reduce?0:Math.sin(t/300+ph)*18;
+    drawPuffin(x+drift,y+bob,reduce?0:Math.sin(t/40+ph)*.12,r,false,null,P);BGPOS.push({kind:'sea',i,x:x+drift,y:y+bob-r*1.3});
     ctx.fillStyle=theme.sea[1];ctx.fillRect(x+drift-r*1.6,y+bob+r*.45,r*3.4,r*.9); // tucked into the water
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x+drift,y+bob+r*.5,r*1.5,r*.3,0,0,7);ctx.stroke();}
+    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x+drift,y+bob+r*.5,r*1.5,r*.3,0,0,7);ctx.stroke();});
   if(!theme.birds)return;
   // a little flock whirring across the sky
   for(let k=0;k<4;k++){
     const sp=[.72,1.05,.86,1.2][k],x=(([0,520,1130,770][k]+(reduce?0:t*sp))%(W+160))-80,y=[176,118,262,214][k]+Math.sin((t+k*90)/45)*10,r=[9,7.5,11,8.5][k];
     drawPuffin(x,y,.15,r,false,reduce?.3:Math.sin(t/1.6+k),P);
+    if(x>20&&x<W-20)BGPOS.push({kind:'fly',i:k,x,y:y-r*1.5}); // only ones on screen can talk
   }
 }
 function drawPuffin(x,y,ang,r,feet,flap,T){
@@ -2506,11 +2635,11 @@ function drawScene(){
     ctx.beginPath();ctx.moveTo(ex-6,ey-6);ctx.lineTo(ex+6,ey+6);ctx.moveTo(ex+6,ey-6);ctx.lineTo(ex-6,ey+6);ctx.stroke();
   }
   if(aiming&&Math.hypot(pull.x,pull.y)>=15){
-    let x=pp.x,y=pp.y,vx=-pull.x*POWER*SL().power,vy=-pull.y*POWER*SL().power,hit=null;
-    const steps=gear.scope?260:60,R=TYPES[selected].r;
+    let x=pp.x,y=pp.y,vx=-pull.x*POWER*SL().power*FAST,vy=-pull.y*POWER*SL().power*FAST,hit=null;
+    const steps=Math.round((gear.scope?260:60)/FAST),R=TYPES[selected].r; // same length of guide line as before the speed-up
     const targets=gear.target?[...gulls.filter(g=>g.plugin.alive).map(g=>({b:g,w:36,h:36,gull:true})),...blocks.map(b=>({b,w:b.plugin.w,h:b.plugin.h}))]:[];
-    for(let k=0;k<steps;k++){vy+=GSTEP;vx*=.998;vy*=.998;x+=vx;y+=vy;
-      if(k%3===0){const fade=gear.scope?.8:.85-k/80;ctx.fillStyle=(gear.scope?'rgba(255,240,170,':'rgba(255,255,255,')+Math.max(.1,fade)+')';
+    for(let k=0;k<steps;k++){vy+=GSTEP*FAST*FAST;vx*=.998;vy*=.998;x+=vx;y+=vy;
+      if(k%2===0){const fade=gear.scope?.8:.85-k/80;ctx.fillStyle=(gear.scope?'rgba(255,240,170,':'rgba(255,255,255,')+Math.max(.1,fade)+')';
         ctx.beginPath();ctx.arc(x,y,Math.max(1.2,gear.scope?3:3.2-k/30),0,7);ctx.fill();}
       if(gear.target){for(const T of targets){const p=T.b.position;if(Math.abs(x-p.x)<T.w/2+R&&Math.abs(y-p.y)<T.h/2+R){hit={x,y,gull:T.gull};break;}}if(hit)break;}
       if(y>GROUND||x>W+40)break;}
@@ -2579,7 +2708,7 @@ function drawScene(){
     ctx.globalAlpha=1;
   }
   drawWeather();
-  drawPlaceBadge();drawRemembrance();
+  drawBgSpeech();drawPlaceBadge();drawRemembrance();
   if(theme.extra==='petals'){
     for(const f of SNOW){const y=(f.y+(reduce?0:t*f.sp*.7))%H,x=(f.x+Math.sin((t+f.ph*20)/40)*20+(reduce?0:t*.3)+W)%W;
       ctx.fillStyle=f.ph%3?'#f7b6cf':'#ffffff';ctx.beginPath();ctx.ellipse(x,y,3.2,1.8,(t+f.ph*9)/30,0,7);ctx.fill();}}
@@ -3070,15 +3199,36 @@ function updatePicker(){
   }
 }
 
-function frame(){
-  // one bad frame should never freeze the whole game
-  try{step();}catch(e){console.error(e);}
+/* ---------- game speed: the whole game (falling towers, gulls, sparkles, waiting between shots) runs this many times faster ---------- */
+const SPEEDS=[1,1.25,1.5,2,3];
+let SPEED=(()=>{try{const v=+JSON.parse(localStorage.getItem('angryPuffins.speed2'));if(SPEEDS.includes(v))return v;}catch(e){}return 1.5;})(); // starts a little slower than before
+const speedBtn=$('speedBtn');
+const speedLabel=()=>{speedBtn.textContent='⏩ Speed '+SPEED+'×';speedBtn.setAttribute('aria-label','Game speed '+SPEED+' times. Click to change.');};
+speedLabel();
+speedBtn.addEventListener('click',e=>{e.stopPropagation();SPEED=SPEEDS[(SPEEDS.indexOf(SPEED)+1)%SPEEDS.length];
+  try{localStorage.setItem('angryPuffins.speed2',JSON.stringify(SPEED));}catch(err){}speedLabel();});
+let lastNow=null,stepAcc=0;
+function frame(now){
+  // run the game at 60 steps a second times the chosen speed, whatever the screen's refresh rate
+  if(lastNow===null)lastNow=now;
+  const dt=Math.min(100,Math.max(0,now-lastNow));lastNow=now;
+  stepAcc+=dt*60/1000*SPEED;
+  let n=0;
+  while(stepAcc>=1&&n<8){ // one bad frame should never freeze the whole game
+    try{step();}catch(e){console.error(e);}
+    stepAcc-=1;n++;
+  }
+  if(n>=8)stepAcc=0; // the tab was asleep: don't try to catch up
   try{ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;draw();}catch(e){console.error(e);}
+  if(!frame.shown){frame.shown=true;$('loadCover').hidden=true;} // the game is up: take the loading cover away
   requestAnimationFrame(frame);
 }
 loadLevel(Math.min(best,LEVELS.length-1));
 requestAnimationFrame(frame);
 })();
+</script>
+<script>
+setTimeout(()=>{const c=document.getElementById('loadCover');if(c&&!c.hidden)document.getElementById('loadText').textContent='Still loading… if this takes too long, check your internet and reload the page.';},12000);
 </script>
 <script>
 /* ---------- log in / log out: pick a player, or make a new one. Each player keeps their own progress on this device ---------- */
@@ -3334,3 +3484,6 @@ requestAnimationFrame(frame);
   window.__music={tunes:TUNES.map(T=>{const b=build(T);return {name:T.name,eighths:b.mel.length,chords:b.ch.length,secs:+(b.len*T.e8).toFixed(1)};})};
 })();
 </script>
+
+
+</body></html>
